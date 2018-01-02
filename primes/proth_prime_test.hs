@@ -2,11 +2,6 @@
  - The code is provided 'as is' without any warranty and it is under the public domain.
  -
  - DESCRIPTION:
- - Given e as input we calculate if the number N = 3 * 2 ^ {3 e + 2} + 1 is a prime using
- - a little variant of Proth theorem and Pepin test. We make use that numbers of that form
- - are prime if and only if 7 ^ {3 * 2^{3 e + 2}} == -1 (mod N).
- -
- - Usage: isProthPrime e
  - For reference see https://arxiv.org/pdf/0812.2596.pdf
  -}
 
@@ -17,9 +12,17 @@ modExp b 0 m = 1
 modExp b e m = t * modExp ((b * b) `mod` m) (shiftR e 1) m `mod` m
   where t = if testBit e 0 then b `mod` m else 1
 
+-- e and t pairs with 3 \nmid t
+nextProth :: (Integer, Integer) -> (Integer, Integer)
+nextProth (e, t) = let nextt = if t `mod` 3 == 1 then t + 4 else t + 2
+                   in if nextt >= 2^e then (e + 1, 1) else (e, nextt)
 
-isProthPrime :: Integer -> Bool
-isProthPrime e = (modExp 7 exp bign) == (bign - 1)
-  where bign = 3 * 2 ^ (3 * e + 2) + 1
+isPrime :: (Integer, Integer) -> Bool
+isPrime (e, t) = (modExp 3 exp bign) == (bign - 1)
+  where bign = t * 2^e + 1
         exp = (bign - 1) `div` 2
 
+getFirstPrimeAfter :: (Integer, Integer) -> (Integer, Integer)
+getFirstPrimeAfter s = let proths s = s : proths (nextProth s)
+                       in head $ [ x | x <- proths s, isPrime x ]
+  
